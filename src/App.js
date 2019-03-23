@@ -2,6 +2,19 @@ import React from 'react'
 // import * as BooksAPI from './BooksAPI'
 import './App.css'
 
+const BookShelf = () => (
+  <div className="bookshelf">
+    <h2 className="bookshelf-title">Read</h2>
+    <div className="bookshelf-books">
+      <ol className="books-grid">
+        <li>
+          <Book />
+        </li>
+      </ol>
+    </div>
+  </div>
+);
+
 const Book = () => (                        
   <div className="book">
     <div className="book-top">
@@ -36,28 +49,35 @@ class BooksApp extends React.Component {
   }
 
   render() {
-    const searchBooks = (<div className="search-books">
-    <div className="search-books-bar">
-      <button
-        className="close-search"
-        onClick={() => this.setState({ showSearchPage: false })}>
-        Close
-      </button>
-      <div className="search-books-input-wrapper">
-        {/*
-          NOTES: The search from BooksAPI is limited to a particular set of search terms.
-          You can find these search terms in SEARCH_TERMS.MD
+    const searchBooks = (
+      <div className="search-books">
+        <div className="search-books-bar">
+          <button
+            className="close-search"
+            onClick={() => this.setState({ showSearchPage: false })}>
+            Close
+          </button>
+          <div className="search-books-input-wrapper">
+            {/*
+              NOTES: The search from BooksAPI is limited to a particular set of search terms.
+              You can find these search terms in SEARCH_TERMS.MD
 
-          However, remember that the BooksAPI.search method DOES search by title or author. So, don't worry if
-          you don't find a specific author or title. Every search is limited by search terms.
-        */}
-        <input type="text" placeholder="Search by title or author" />
-      </div>
-    </div>
-    <div className="search-books-results">
-      <ol className="books-grid" />
-    </div>
-  </div>);
+              However, remember that the BooksAPI.search method DOES search by title or author. So, don't worry if
+              you don't find a specific author or title. Every search is limited by search terms.
+            */}
+            <input type="text" placeholder="Search by title or author" />
+          </div>
+        </div>
+        <div className="search-books-results">
+          <ol className="books-grid" />
+        </div>
+      </div>);
+
+    const bookShelfs = {
+        reading: 'Currently Reading',
+        soon: 'Want to Read',
+        read: 'Read'
+      };
 
     return (
       <div className="app">
@@ -68,34 +88,9 @@ class BooksApp extends React.Component {
             </div>
             <div className="list-books-content">
               <div>
-                <div className="bookshelf">
-                  <h2 className="bookshelf-title">Currently Reading</h2>
-                  <div className="bookshelf-books">
-                    <ol className="books-grid">
-                      <Book />
-                    </ol>
-                  </div>
-                </div>
-                <div className="bookshelf">
-                  <h2 className="bookshelf-title">Want to Read</h2>
-                  <div className="bookshelf-books">
-                    <ol className="books-grid">
-                      <li>
-                        <Book />
-                      </li>
-                    </ol>
-                  </div>
-                </div>
-                <div className="bookshelf">
-                  <h2 className="bookshelf-title">Read</h2>
-                  <div className="bookshelf-books">
-                    <ol className="books-grid">
-                      <li>
-                        <Book />
-                      </li>
-                    </ol>
-                  </div>
-                </div>
+                <BookShelf name={bookShelfs.reading} />
+                <BookShelf name={bookShelfs.soon} />
+                <BookShelf name={bookShelfs.read} />
               </div>
             </div>
             <div className="open-search">
