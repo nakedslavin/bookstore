@@ -1,106 +1,95 @@
-import React from 'react'
-// import * as BooksAPI from './BooksAPI'
-import './App.css'
-
-const BookShelf = () => (
-  <div className="bookshelf">
-    <h2 className="bookshelf-title">Read</h2>
-    <div className="bookshelf-books">
-      <ol className="books-grid">
-        <li>
-          <Book />
-        </li>
-      </ol>
-    </div>
-  </div>
-);
-
-const Book = () => (                        
-  <div className="book">
-    <div className="book-top">
-      <div
-        className="book-cover"
-        style={{
-          width: 128,
-          height: 192,
-          backgroundImage:
-            'url("http://books.google.com/books/content?id=32haAAAAMAAJ&printsec=frontcover&img=1&zoom=1&imgtk=AFLRE72yckZ5f5bDFVIf7BGPbjA0KYYtlQ__nWB-hI_YZmZ-fScYwFy4O_fWOcPwf-pgv3pPQNJP_sT5J_xOUciD8WaKmevh1rUR-1jk7g1aCD_KeJaOpjVu0cm_11BBIUXdxbFkVMdi&source=gbs_api")',
-        }}
-      />
-      <div className="book-shelf-changer">
-        <select>
-          <option value="move" disabled>
-            Move to...
-          </option>
-          <option value="currentlyReading">Currently Reading</option>
-          <option value="wantToRead">Want to Read</option>
-          <option value="read">Read</option>
-          <option value="none">None</option>
-        </select>
-      </div>
-    </div>
-    <div className="book-title">The Adventures of Tom Sawyer</div>
-    <div className="book-authors">Mark Twain</div>
-  </div>);
+import React from 'react';
+import {Library} from './views/Library';
+import {Search} from './views/Search';
+import * as BooksAPI from './BooksAPI';
+import {BrowserRouter as Router, Route } from "react-router-dom";
 
 class BooksApp extends React.Component {
-  state = {
-    showSearchPage: false,
+  
+  constructor(props) {
+    super(props);
+    this.state = {
+      currentlyReading: [],
+      wantToRead: [],
+      read: [],
+      search: [],
+      searchTerm: '',
+      error: null
+    };
+    this.defaultErr = 'Something went wrong';
+  }
+  
+  async componentDidMount() {
+    await this.updateLibrary();
+  }
+
+  async componentDidUpdate(props, state) {
+    const {searchTerm} = this.state;
+    if (state.searchTerm === searchTerm || !searchTerm) return;
+    await this.searchLibrary(searchTerm);
+  }
+
+  switchShelf = async (shelfName, book, page) => {
+    try {
+      book.shelf = shelfName;
+      await BooksAPI.update(book, shelfName);
+      await this.updateLibrary();
+    } catch(e) {
+      this.setState({error: e});
+    }
+  }
+
+  updateLibrary = async () => {
+    try {
+      const books = await BooksAPI.getAll();
+      if (Array.isArray(books)) {
+        this.setState({
+          currentlyReading: books.filter(b => b.shelf === 'currentlyReading'),
+          read: books.filter(b => b.shelf === 'read'),
+          wantToRead: books.filter(b => b.shelf === 'wantToRead'),
+          error: null
+        });
+      }
+      else {
+        const { error } = books;
+        this.setState({ error });
+      }
+    }
+    catch (e) {
+      this.setState({ error: this.defaultErr });
+    }
+  }
+
+  searchLibrary = async(searchTerm) => {
+    try {
+      const books = await BooksAPI.search(searchTerm);
+      if (Array.isArray(books)) { 
+        this.setState({search: books, error: null});
+  
+      } else {
+        const {error} = books;
+        this.setState({error, search: []});
+      }
+    } catch(e) {
+      this.setState({error: this.defaultErr, search: []});
+    }
+  }
+
+  searchBarHandler = (searchTerm) => {
+    this.setState({searchTerm});
   }
 
   render() {
-    const searchBooks = (
-      <div className="search-books">
-        <div className="search-books-bar">
-          <button
-            className="close-search"
-            onClick={() => this.setState({ showSearchPage: false })}>
-            Close
-          </button>
-          <div className="search-books-input-wrapper">
-            {/*
-              NOTES: The search from BooksAPI is limited to a particular set of search terms.
-              You can find these search terms in SEARCH_TERMS.MD
-
-              However, remember that the BooksAPI.search method DOES search by title or author. So, don't worry if
-              you don't find a specific author or title. Every search is limited by search terms.
-            */}
-            <input type="text" placeholder="Search by title or author" />
-          </div>
-        </div>
-        <div className="search-books-results">
-          <ol className="books-grid" />
-        </div>
-      </div>);
-
-    const bookShelfs = {
-        reading: 'Currently Reading',
-        soon: 'Want to Read',
-        read: 'Read'
-      };
-
     return (
-      <div className="app">
-        {this.state.showSearchPage ? searchBooks : (
-          <div className="list-books">
-            <div className="list-books-title">
-              <h1>MyReads</h1>
-            </div>
-            <div className="list-books-content">
-              <div>
-                <BookShelf name={bookShelfs.reading} />
-                <BookShelf name={bookShelfs.soon} />
-                <BookShelf name={bookShelfs.read} />
-              </div>
-            </div>
-            <div className="open-search">
-              <button onClick={() => this.setState({ showSearchPage: true })}>Add a book</button>
-            </div>
-          </div>
-        )}
-      </div>
+      <Router>
+        <Route path="/" exact component={() => <Library {...this.state} switchShelf={this.switchShelf} />} />
+        <Route path="/search/" component={() => <Search {...this.state} 
+          switchShelf={this.switchShelf} 
+          searchBarHandler={this.searchBarHandler}
+          searchLibrary={this.searchLibrary} />} />
+      </Router>
     )
   }
 }
 
-export default BooksApp
+export default BooksApp;
